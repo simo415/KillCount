@@ -1,5 +1,6 @@
 package com.unlucky4ever.killcount.listeners;
 
+import java.io.File;
 import java.sql.ResultSet;
 
 import org.bukkit.entity.Player;
@@ -9,6 +10,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 
 import com.unlucky4ever.killcount.KillCount;
 import com.unlucky4ever.killcount.extras.sql.MySQL;
+import com.unlucky4ever.killcount.extras.sql.SQLite;
 
 public class PlayerListener implements Listener {
 	
@@ -36,67 +38,132 @@ public class PlayerListener implements Listener {
 		}
 	}
 	public void logKill(String username) {
-		KillCount.db = new MySQL(plugin.getLogger(), "[KillCount]", KillCount.dbhost, KillCount.dbport, KillCount.database, KillCount.dbuser, KillCount.dbpass);
-		KillCount.db.open();
-		if (KillCount.db.checkConnection()) {
-			try {
-				ResultSet kill = KillCount.db.query("SELECT COUNT(*) FROM killcount WHERE username='" + username + "'");
-				kill.first();
-				int count = kill.getInt(1);
-				if (count == 0) {
-					if (plugin.getConfig().getBoolean("debug")) {
-						plugin.getLogger().info("Inserted " + username);
+		if (plugin.getConfig().getString("storage-type").equalsIgnoreCase("mysql")) {
+			KillCount.db = new MySQL(plugin.getLogger(), "[KillCount]", KillCount.dbhost, KillCount.dbport, KillCount.database, KillCount.dbuser, KillCount.dbpass);
+			KillCount.db.open();
+			if (KillCount.db.checkConnection()) {
+				try {
+					ResultSet kill = KillCount.db.query("SELECT COUNT(*) FROM killcount WHERE username='" + username + "'");
+					kill.first();
+					int count = kill.getInt(1);
+					if (count == 0) {
+						if (plugin.getConfig().getBoolean("debug")) {
+							plugin.getLogger().info("Inserted " + username);
+						}
+						KillCount.db.query("INSERT INTO killcount (username, kills, deaths) VALUES ('" + username + "', 0, 0)");
+						kill.close();
 					}
-					KillCount.db.query("INSERT INTO killcount (username, kills, deaths) VALUES ('" + username + "', 0, 0)");
+					kill = KillCount.db.query("SELECT kills FROM killcount WHERE username='" + username + "'");
+					kill.first();
+					int kills = kill.getInt(1);
 					kill.close();
+					kills++;
+					if (plugin.getConfig().getBoolean("debug")) {
+						plugin.getLogger().info("Added a kill to " + username);
+					}
+					KillCount.db.query("UPDATE killcount SET kills='" + kills + "' WHERE username='" + username + "'");
+				} catch (Exception e) {
+					if (plugin.getConfig().getBoolean("debug")) {
+						e.printStackTrace();
+					}
 				}
-				kill = KillCount.db.query("SELECT kills FROM killcount WHERE username='" + username + "'");
-				kill.first();
-				int kills = kill.getInt(1);
-				kill.close();
-				kills++;
-				if (plugin.getConfig().getBoolean("debug")) {
-					plugin.getLogger().info("Added a kill to " + username);
-				}
-				KillCount.db.query("UPDATE killcount SET kills='" + kills + "' WHERE username='" + username + "'");
-			} catch (Exception e) {
-				if (plugin.getConfig().getBoolean("debug")) {
-					e.printStackTrace();
-				}
+				KillCount.db.close();
 			}
-			KillCount.db.close();
+		}
+		if (plugin.getConfig().getString("storage-type").equalsIgnoreCase("mysql")) {
+			KillCount.sqlite = new SQLite(plugin.getLogger(), "[KillCount]", "users", plugin.getDataFolder()+File.separator+"data");
+			KillCount.sqlite.open();
+			if (KillCount.sqlite.checkConnection()) {
+				try {
+					ResultSet kill = KillCount.sqlite.query("SELECT COUNT(*) FROM killcount WHERE username='" + username + "'");
+					int count = kill.getInt(1);
+					if (count == 0) {
+						if (plugin.getConfig().getBoolean("debug")) {
+							plugin.getLogger().info("Inserted " + username);
+						}
+						KillCount.sqlite.query("INSERT INTO killcount (username, kills, deaths) VALUES ('" + username + "', 0, 0)");
+						kill.close();
+					}
+					kill = KillCount.sqlite.query("SELECT kills FROM killcount WHERE username='" + username + "'");
+					kill.first();
+					int kills = kill.getInt(1);
+					kill.close();
+					kills++;
+					if (plugin.getConfig().getBoolean("debug")) {
+						plugin.getLogger().info("Added a kill to " + username);
+					}
+					KillCount.sqlite.query("UPDATE killcount SET kills='" + kills + "' WHERE username='" + username + "'");
+				} catch (Exception e) {
+					if (plugin.getConfig().getBoolean("debug")) {
+						e.printStackTrace();
+					}
+				}
+				KillCount.db.close();
+			}
 		}
 	}
 	public void logDeath(String username) {
-		KillCount.db = new MySQL(plugin.getLogger(), "[KillCount]", KillCount.dbhost, KillCount.dbport, KillCount.database, KillCount.dbuser, KillCount.dbpass);
-		KillCount.db.open();
-		if (KillCount.db.checkConnection()) {
-			try {
-				ResultSet death = KillCount.db.query("SELECT COUNT(*) FROM killcount WHERE username='" + username + "'");
-				death.first();
-				int count = death.getInt(1);
-				if (count == 0) {
-					if (plugin.getConfig().getBoolean("debug")) {
-						plugin.getLogger().info("Inserted " + username);
+		if (plugin.getConfig().getString("storage-type").equalsIgnoreCase("mysql")) {
+			KillCount.db = new MySQL(plugin.getLogger(), "[KillCount]", KillCount.dbhost, KillCount.dbport, KillCount.database, KillCount.dbuser, KillCount.dbpass);
+			KillCount.db.open();
+			if (KillCount.db.checkConnection()) {
+				try {
+					ResultSet death = KillCount.db.query("SELECT COUNT(*) FROM killcount WHERE username='" + username + "'");
+					death.first();
+					int count = death.getInt(1);
+					if (count == 0) {
+						if (plugin.getConfig().getBoolean("debug")) {
+							plugin.getLogger().info("Inserted " + username);
+						}
+						KillCount.db.query("INSERT INTO killcount (username, kills, deaths) VALUES ('" + username + "', 0, 0)");
+						death.close();
 					}
-					KillCount.db.query("INSERT INTO killcount (username, kills, deaths) VALUES ('" + username + "', 0, 0)");
+					death = KillCount.db.query("SELECT deaths FROM killcount WHERE username='" + username + "'");
+					death.first();
+					int deaths = death.getInt(1);
 					death.close();
+					deaths++;
+					if (plugin.getConfig().getBoolean("debug")) {
+						plugin.getLogger().info("Added a death to " + username);
+					}
+					KillCount.db.query("UPDATE killcount SET deaths='" + deaths + "' WHERE username='" + username + "'");
+				} catch (Exception e) {
+					if (plugin.getConfig().getBoolean("debug")) {
+						e.printStackTrace();
+					}
 				}
-				death = KillCount.db.query("SELECT deaths FROM killcount WHERE username='" + username + "'");
-				death.first();
-				int deaths = death.getInt(1);
-				death.close();
-				deaths++;
-				if (plugin.getConfig().getBoolean("debug")) {
-					plugin.getLogger().info("Added a death to " + username);
-				}
-				KillCount.db.query("UPDATE killcount SET deaths='" + deaths + "' WHERE username='" + username + "'");
-			} catch (Exception e) {
-				if (plugin.getConfig().getBoolean("debug")) {
-					e.printStackTrace();
-				}
+				KillCount.db.close();
 			}
-			KillCount.db.close();
+		}
+		if (plugin.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
+			KillCount.sqlite = new SQLite(plugin.getLogger(), "[KillCount]", "users", plugin.getDataFolder()+File.separator+"data");
+			KillCount.sqlite.open();
+			if (KillCount.sqlite.checkConnection()) {
+				try {
+					ResultSet death = KillCount.sqlite.query("SELECT COUNT(*) FROM killcount WHERE username='" + username + "'");
+					int count = death.getInt(1);
+					if (count == 0) {
+						if (plugin.getConfig().getBoolean("debug")) {
+							plugin.getLogger().info("Inserted " + username);
+						}
+						KillCount.sqlite.query("INSERT INTO killcount (username, kills, deaths) VALUES ('" + username + "', 0, 0)");
+						death.close();
+					}
+					death = KillCount.sqlite.query("SELECT deaths FROM killcount WHERE username='" + username + "'");
+					int deaths = death.getInt(1);
+					death.close();
+					deaths++;
+					if (plugin.getConfig().getBoolean("debug")) {
+						plugin.getLogger().info("Added a death to " + username);
+					}
+					KillCount.sqlite.query("UPDATE killcount SET deaths='" + deaths + "' WHERE username='" + username + "'");
+				} catch (Exception e) {
+					if (plugin.getConfig().getBoolean("debug")) {
+						e.printStackTrace();
+					}
+				}
+				KillCount.sqlite.close();
+			}
 		}
 	}
 }
