@@ -1,0 +1,68 @@
+name: KillCount
+version: 1.0
+main: com.unlucky4ever.killcount.KillCount
+
+commands:
+  kc:
+    description: Display your kills and deaths
+  kdr:
+    description: Display your kill/death ratio
+  kca:
+    description: Admin Commands
+    
+permissions:
+  killcount.*:
+    description: Access to all KillCount commands
+    default: op
+    children:
+      killcount.kill: true
+      killcount.death: true
+      killcount.ratio: true
+      killcount.ratio.others: true
+      killcount.kc: true
+      killcount.kc.others: true
+      killcount.top: true
+      killcount.admin.empty: true
+      killcount.admin.reset: true
+  killcount.use:
+    description: Allows you to use the basics of KillCount
+    default: op
+    children:
+      killcount.kill: true
+      killcount.death: true
+      killcount.ratio: true
+      killcount.kc: true
+      killcount.top: true
+  killcount.admin:
+    description: Allows access to all admin commands
+    default: op
+    children:
+      killcount.admin.empty: true
+      killcount.admin.reset: true
+  killcount.kill:
+    description: Allows your kills to be logged
+    default: op
+  killcount.death:
+    description: Allows your deaths to be logged
+    default: op
+  killcount.ratio:
+    description: Allows you to view your kill/death ratio
+    default: op
+  killcount.ratio.others:
+    description: Allows you to view other players kill/death ratio
+    default: op
+  killcount.kc:
+    description: Allows you to view your kill/death count
+    deafult: op
+  killcount.kc.others:
+    description: Allows you to view other players kills/death count
+    default: op
+  killcount.top:
+    description: Allows you to view the top 5 killers
+    default: op
+  killcount.admin.empty:
+    description: Allows access to empty the database
+    default: op
+  killcount.admin.reset:
+    description: Allows you to reset another players kill/death count to 0
+    default: op
