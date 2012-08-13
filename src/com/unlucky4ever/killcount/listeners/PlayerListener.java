@@ -64,6 +64,7 @@ public class PlayerListener implements Listener {
 					e.printStackTrace();
 				}
 			}
+			KillCount.db.close();
 		}
 	}
 	public void logDeath(String username) {
@@ -95,6 +96,7 @@ public class PlayerListener implements Listener {
 					e.printStackTrace();
 				}
 			}
+			KillCount.db.close();
 		}
 	}
 }

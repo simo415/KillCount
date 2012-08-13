@@ -14,12 +14,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.unlucky4ever.killcount.extras.sql.MySQL;
+import com.unlucky4ever.killcount.extras.sql.SQLite;
 import com.unlucky4ever.killcount.listeners.PlayerListener;
 import com.unlucky4ever.killcount.extras.Metrics;
 
 public class KillCount extends JavaPlugin {
 	
 	public static MySQL db;
+	public static SQLite sqlite;
 	public static String dbhost;
 	public static String dbport;
 	public static String database;
@@ -42,6 +44,7 @@ public class KillCount extends JavaPlugin {
 			if (!file.exists()) {
 				this.getLogger().info("Generating first time config.yml...");
 				this.getConfig().addDefault("debug", false);
+				this.getConfig().addDefault("storage-type", "sqlite");
 				this.getConfig().addDefault("mysql.host", "localhost");
 				this.getConfig().addDefault("mysql.port", "3306");
 				this.getConfig().addDefault("mysql.database", "minecraft");
@@ -62,6 +65,7 @@ public class KillCount extends JavaPlugin {
 	
 	public void onDisable() {
 		db = null;
+		sqlite = null;
 	}
 	
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
@@ -69,31 +73,58 @@ public class KillCount extends JavaPlugin {
 		if (commandLabel.equalsIgnoreCase("kc")) {
 			if (args.length == 0) {
 				if (player.hasPermission("killcount.kc")) {
-			    	db = new MySQL(this.getLogger(), "[KillCount]", dbhost, dbport, database, dbuser, dbpass);
-			    	db.open();
-			    	if (db.checkConnection()) {
-			    		try {
-							ResultSet result = db.query("SELECT COUNT(*) FROM killcount WHERE username='" + player.getName() + "'");
-							result.first();
-							int count = result.getInt(1);
-							result.close();
-							if (count == 0) {
-								player.sendMessage(ChatColor.RED + "Your stats aren't in the database!");
-							} else {
-								result = db.query("SELECT kills,deaths FROM killcount WHERE username='" + player.getName() + "'");
+					if (this.getConfig().getString("storage-type").equalsIgnoreCase("mysql")) {
+				    	db = new MySQL(this.getLogger(), "[KillCount]", dbhost, dbport, database, dbuser, dbpass);
+				    	db.open();
+				    	if (db.checkConnection()) {
+				    		try {
+								ResultSet result = db.query("SELECT COUNT(*) FROM killcount WHERE username='" + player.getName() + "'");
 								result.first();
-								int kills = result.getInt(1);
-								int deaths = result.getInt(2);
+								int count = result.getInt(1);
 								result.close();
-								player.sendMessage(ChatColor.RED + "You have " + kills + " kills and " + deaths + " deaths.");
-							}
-			    		} catch (Exception e) {
-			    			if (this.getConfig().getBoolean("debug")) {
-			    				e.printStackTrace();
-			    			}
-			    		}
-			    	}
-			    	db.close();
+								if (count == 0) {
+									player.sendMessage(ChatColor.RED + "Your stats aren't in the database!");
+								} else {
+									result = db.query("SELECT kills,deaths FROM killcount WHERE username='" + player.getName() + "'");
+									result.first();
+									int kills = result.getInt(1);
+									int deaths = result.getInt(2);
+									result.close();
+									player.sendMessage(ChatColor.RED + "You have " + kills + " kills and " + deaths + " deaths.");
+								}
+				    		} catch (Exception e) {
+				    			if (this.getConfig().getBoolean("debug")) {
+				    				e.printStackTrace();
+				    			}
+				    		}
+					    	db.close();
+				    	}
+					}
+					if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
+						sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+				    	sqlite.open();
+				    	if (sqlite.checkConnection()) {
+				    		try {
+								ResultSet result = sqlite.query("SELECT COUNT(*) FROM killcount WHERE username='" + player.getName() + "'");
+								int count = result.getInt(1);
+								result.close();
+								if (count == 0) {
+									player.sendMessage(ChatColor.RED + "Your stats aren't in the database!");
+								} else {
+									result = sqlite.query("SELECT kills,deaths FROM killcount WHERE username='" + player.getName() + "'");
+									int kills = result.getInt(1);
+									int deaths = result.getInt(2);
+									result.close();
+									player.sendMessage(ChatColor.RED + "You have " + kills + " kills and " + deaths + " deaths.");
+								}
+				    		} catch (Exception e) {
+				    			if (this.getConfig().getBoolean("debug")) {
+				    				e.printStackTrace();
+				    			}
+				    		}
+				    		sqlite.close();
+				    	}
+					}
 				} else {
 					player.sendMessage(ChatColor.RED + "You don't have permission to do that!");
 				}
@@ -117,8 +148,8 @@ public class KillCount extends JavaPlugin {
 									e.printStackTrace();
 								}
 							}
+							db.close();
 						}
-						db.close();
 					} else {
 						player.sendMessage(ChatColor.RED + "You don't have permission to do that!");
 					}
@@ -148,31 +179,58 @@ public class KillCount extends JavaPlugin {
 					}
 				} else {
 					if (player.hasPermission("killcount.kc.others")) {
-						db = new MySQL(this.getLogger(), "[KillCount]", dbhost, dbport, database, dbuser, dbpass);
-						db.open();
-						if (db.checkConnection()) {
-							try {
-								ResultSet result = db.query("SELECT COUNT(*) FROM killcount where username='" + args[0] + "'");
-								result.first();
-								int count = result.getInt(1);
-								result.close();
-								if (count == 0) {
-									player.sendMessage(ChatColor.RED + args[0] + " isn't in the database!");
-								} else {
-									result = db.query("SELECT kills,deaths FROM killcount WHERE username='" + args[0] + "'");
+						if (this.getConfig().getString("storage-type").equalsIgnoreCase("mysql")) {
+							db = new MySQL(this.getLogger(), "[KillCount]", dbhost, dbport, database, dbuser, dbpass);
+							db.open();
+							if (db.checkConnection()) {
+								try {
+									ResultSet result = db.query("SELECT COUNT(*) FROM killcount where username='" + args[0] + "'");
 									result.first();
-									int kills = result.getInt(1);
-									int deaths = result.getInt(2);
+									int count = result.getInt(1);
 									result.close();
-									player.sendMessage(ChatColor.RED + args[0] + " has " + kills + " kills and " + deaths + " deaths.");
+									if (count == 0) {
+										player.sendMessage(ChatColor.RED + args[0] + " isn't in the database!");
+									} else {
+										result = db.query("SELECT kills,deaths FROM killcount WHERE username='" + args[0] + "'");
+										result.first();
+										int kills = result.getInt(1);
+										int deaths = result.getInt(2);
+										result.close();
+										player.sendMessage(ChatColor.RED + args[0] + " has " + kills + " kills and " + deaths + " deaths.");
+									}
+								} catch (Exception e) {
+									if (this.getConfig().getBoolean("debug")) {
+										e.printStackTrace();
+									}
 								}
-							} catch (Exception e) {
-								if (this.getConfig().getBoolean("debug")) {
-									e.printStackTrace();
-								}
+								db.close();
 							}
 						}
-						db.close();
+						if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
+							sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+							sqlite.open();
+							if (sqlite.checkConnection()) {
+								try {
+									ResultSet result = sqlite.query("SELECT COUNT(*) FROM killcount where username='" + args[0] + "'");
+									int count = result.getInt(1);
+									result.close();
+									if (count == 0) {
+										player.sendMessage(ChatColor.RED + args[0] + " isn't in the database!");
+									} else {
+										result = sqlite.query("SELECT kills,deaths FROM killcount WHERE username='" + args[0] + "'");
+										int kills = result.getInt(1);
+										int deaths = result.getInt(2);
+										result.close();
+										player.sendMessage(ChatColor.RED + args[0] + " has " + kills + " kills and " + deaths + " deaths.");
+									}
+								} catch (Exception e) {
+									if (this.getConfig().getBoolean("debug")) {
+										e.printStackTrace();
+									}
+								}
+								sqlite.close();
+							}
+						}
 					} else {
 						player.sendMessage(ChatColor.RED + "You don't have permission to do that!");
 					}
@@ -210,8 +268,8 @@ public class KillCount extends JavaPlugin {
 								e.printStackTrace();
 							}
 						}
+						db.close();
 					}
-					db.close();
 				} else {
 					player.sendMessage(ChatColor.RED + "You don't have permission to do that!");
 				}
@@ -245,8 +303,8 @@ public class KillCount extends JavaPlugin {
 								e.printStackTrace();
 							}
 						}
+						db.close();
 					}
-					db.close();
 				} else {
 					player.sendMessage(ChatColor.RED + "You don't have permission to do that!");
 				}
@@ -288,11 +346,11 @@ public class KillCount extends JavaPlugin {
 										e.printStackTrace();
 									}
 								}
+								db.close();
 							}
 						} else {
 							player.sendMessage(ChatColor.RED + "What are you confirming?");
 						}
-						db.close();
 					} else {
 						player.sendMessage(ChatColor.RED + "You don't have permission to do that!");
 					}
@@ -319,8 +377,8 @@ public class KillCount extends JavaPlugin {
 									e.printStackTrace();
 								}
 							}
+							db.close();
 						}
-						db.close();
 					} else {
 						player.sendMessage(ChatColor.RED + "You don't have permission to do that!");
 					}
@@ -335,23 +393,38 @@ public class KillCount extends JavaPlugin {
 	}
 	
     private void setupDatabase() {
-    	dbhost = this.getConfig().getString("mysql.host");
-    	database = this.getConfig().getString("mysql.database");
-    	dbuser = this.getConfig().getString("mysql.username");
-    	dbpass = this.getConfig().getString("mysql.password");
-    	dbport = this.getConfig().getString("mysql.port");
     	
-    	db = new MySQL(this.getLogger(), "[KillCount]", dbhost, dbport, database, dbuser, dbpass);
-    	this.getLogger().info("Connecting to MySQL database...");
-    	db.open();
-    	if (db.checkConnection()) {
-    		this.getLogger().info("Successfully connected to database!");
-    		if (!db.checkTable("killcount")) {
-    			this.getLogger().info("Creating table 'killcount' in database " + this.getConfig().getString("mysql.database"));
-    			db.createTable("CREATE TABLE killcount ( id int NOT NULL AUTO_INCREMENT, username VARCHAR(32) NOT NULL, kills int NOT NULL, deaths int NOT NULL, PRIMARY KEY (id) ) ENGINE=MyISAM;");
-    		}
+    	if (this.getConfig().getString("storage-type").equalsIgnoreCase("mysql")) {
+        	dbhost = this.getConfig().getString("mysql.host");
+        	database = this.getConfig().getString("mysql.database");
+        	dbuser = this.getConfig().getString("mysql.username");
+        	dbpass = this.getConfig().getString("mysql.password");
+        	dbport = this.getConfig().getString("mysql.port");
+        	
+        	db = new MySQL(this.getLogger(), "[KillCount]", dbhost, dbport, database, dbuser, dbpass);
+        	this.getLogger().info("Connecting to MySQL database...");
+        	db.open();
+        	if (db.checkConnection()) {
+        		this.getLogger().info("Successfully connected to database!");
+        		if (!db.checkTable("killcount")) {
+        			this.getLogger().info("Creating table 'killcount' in database " + this.getConfig().getString("mysql.database"));
+        			db.createTable("CREATE TABLE killcount ( id int NOT NULL AUTO_INCREMENT, username VARCHAR(32) NOT NULL, kills int NOT NULL, deaths int NOT NULL, PRIMARY KEY (id) ) ENGINE=MyISAM;");
+        		}
+        	}
+        	db.close();
     	}
-    	db.close();
+    	if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
+        	sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+        	sqlite.open();
+        	if (sqlite.checkConnection()) {
+        		this.getLogger().info("Successfully connected to database!");
+        		if (!sqlite.checkTable("killcount")) {
+        			this.getLogger().info("Creating table 'killcount' in database " + this.getConfig().getString("mysql.database"));
+        			sqlite.createTable("CREATE TABLE killcount (id INTEGER NOT NULL, username VARCHAR(32) NOT NULL, kills INTEGER NOT NULL, deaths INTEGER NOT NULL, PRIMARY KEY (id), UNIQUE (username))");
+        		}
+        	}
+        	sqlite.close();
+    	}
     }
     
     public double roundDouble(double d) {
