@@ -36,6 +36,7 @@ public class PlayerListener implements Listener {
 		if (killed.hasPermission("killcount.death")) {
 			logDeath(killed.getName());
 		}
+		
 	}
 	public void logKill(String username) {
 		if (plugin.getConfig().getString("storage-type").equalsIgnoreCase("mysql")) {
@@ -70,14 +71,15 @@ public class PlayerListener implements Listener {
 				KillCount.db.close();
 			}
 		}
-		if (plugin.getConfig().getString("storage-type").equalsIgnoreCase("mysql")) {
-			KillCount.sqlite = new SQLite(plugin.getLogger(), "[KillCount]", "users", plugin.getDataFolder()+File.separator+"data");
+		if (plugin.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
+			KillCount.sqlite = new SQLite(plugin.getLogger(), "[KillCount]", "users", plugin.getDataFolder()+File.separator);
 			KillCount.sqlite.open();
 			if (KillCount.sqlite.checkConnection()) {
 				try {
 					ResultSet kill = KillCount.sqlite.query("SELECT COUNT(*) FROM killcount WHERE username='" + username + "'");
 					int count = kill.getInt(1);
-					if (count == 0) {
+					kill.close();
+					if (count == 0 || kill == null) {
 						if (plugin.getConfig().getBoolean("debug")) {
 							plugin.getLogger().info("Inserted " + username);
 						}
@@ -85,7 +87,6 @@ public class PlayerListener implements Listener {
 						kill.close();
 					}
 					kill = KillCount.sqlite.query("SELECT kills FROM killcount WHERE username='" + username + "'");
-					kill.first();
 					int kills = kill.getInt(1);
 					kill.close();
 					kills++;
@@ -98,7 +99,7 @@ public class PlayerListener implements Listener {
 						e.printStackTrace();
 					}
 				}
-				KillCount.db.close();
+				KillCount.sqlite.close();
 			}
 		}
 	}
@@ -136,13 +137,14 @@ public class PlayerListener implements Listener {
 			}
 		}
 		if (plugin.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-			KillCount.sqlite = new SQLite(plugin.getLogger(), "[KillCount]", "users", plugin.getDataFolder()+File.separator+"data");
+			KillCount.sqlite = new SQLite(plugin.getLogger(), "[KillCount]", "users", plugin.getDataFolder()+File.separator);
 			KillCount.sqlite.open();
 			if (KillCount.sqlite.checkConnection()) {
 				try {
 					ResultSet death = KillCount.sqlite.query("SELECT COUNT(*) FROM killcount WHERE username='" + username + "'");
 					int count = death.getInt(1);
-					if (count == 0) {
+					death.close();
+					if (count == 0 || death == null) {
 						if (plugin.getConfig().getBoolean("debug")) {
 							plugin.getLogger().info("Inserted " + username);
 						}

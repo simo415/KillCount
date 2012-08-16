@@ -54,7 +54,9 @@ public class KillCount extends JavaPlugin {
 				this.saveConfig();
 			}
 			this.getServer().getPluginManager().registerEvents(this.pl, this);
-			setupDatabase();
+			if (this.getConfig().getString("storage-type").equalsIgnoreCase("mysql") || this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
+				setupDatabase();
+			}
 		} catch (Exception e) {
 			if (file.exists() && this.getConfig().getBoolean("debug")) {
 				e.printStackTrace();
@@ -104,7 +106,7 @@ public class KillCount extends JavaPlugin {
 					    	}
 						}
 						if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-							sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+							sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator);
 					    	sqlite.open();
 					    	if (sqlite.checkConnection()) {
 					    		try {
@@ -143,6 +145,9 @@ public class KillCount extends JavaPlugin {
 										player.sendMessage(ChatColor.RED + "---- Top 5 Killers ----");
 										int rank = 0;
 										while (result.next()) {
+											if (result.getInt(2) == 0) {
+												continue;
+											}
 											rank++;
 											player.sendMessage(ChatColor.GOLD + "" + rank + ". " + result.getString(1) + ChatColor.RESET + " (" + ChatColor.GREEN + result.getInt(2) + " kills" + ChatColor.RESET + ")");
 										}
@@ -156,7 +161,7 @@ public class KillCount extends JavaPlugin {
 								}
 							}
 							if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-								sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+								sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator);
 								sqlite.open();
 								if (sqlite.checkConnection()) {
 									try {
@@ -164,6 +169,9 @@ public class KillCount extends JavaPlugin {
 										player.sendMessage(ChatColor.RED + "---- Top 5 Killers ----");
 										int rank = 0;
 										while (result.next()) {
+											if (result.getInt(2) == 0) {
+												continue;
+											}
 											rank++;
 											player.sendMessage(ChatColor.GOLD + "" + rank + ". " + result.getString(1) + ChatColor.RESET + " (" + ChatColor.GREEN + result.getInt(2) + " kills" + ChatColor.RESET + ")");
 										}
@@ -233,7 +241,7 @@ public class KillCount extends JavaPlugin {
 								}
 							}
 							if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-								sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+								sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator);
 								sqlite.open();
 								if (sqlite.checkConnection()) {
 									try {
@@ -304,18 +312,20 @@ public class KillCount extends JavaPlugin {
 							}
 						}
 						if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-							sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+							sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator);
 							sqlite.open();
 							if (sqlite.checkConnection()) {
 								try {
 									ResultSet result = sqlite.query("SELECT COUNT(*) FROM killcount WHERE username='" + player.getName() + "'");
 									int count = result.getInt(1);
+									result.close();
 									if (count == 0) {
 										player.sendMessage(ChatColor.RED + "Your stats aren't in the database!");
 									} else {
 										result = sqlite.query("SELECT kills,deaths FROM killcount WHERE username='" + player.getName() + "'");
 										int kills = result.getInt(1);
 										int deaths = result.getInt(2);
+										result.close();
 										if (deaths == 0) {
 											ratio = kills;
 										} else {
@@ -369,7 +379,7 @@ public class KillCount extends JavaPlugin {
 							}
 						}
 						if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-							sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+							sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator);
 							sqlite.open();
 							if (sqlite.checkConnection()) {
 								try {
@@ -449,7 +459,7 @@ public class KillCount extends JavaPlugin {
 									}
 								}
 								if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-									sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+									sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator);
 									sqlite.open();
 									if (sqlite.checkConnection()) {
 										try {
@@ -498,7 +508,7 @@ public class KillCount extends JavaPlugin {
 								}
 							}
 							if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-								sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+								sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator);
 								sqlite.open();
 								if (sqlite.checkConnection()) {
 									try {
@@ -509,6 +519,7 @@ public class KillCount extends JavaPlugin {
 											player.sendMessage(ChatColor.RED + args[1] + " isn't in the database!");
 										} else {
 											sqlite.query("UPDATE killcount SET kills='0', deaths='0' WHERE username='" + args[1] + "'");
+											result.close();
 											player.sendMessage(ChatColor.RED + args[1] + " has been reset!");
 										}
 									} catch (Exception e) {
@@ -555,7 +566,7 @@ public class KillCount extends JavaPlugin {
         	db.close();
     	}
     	if (this.getConfig().getString("storage-type").equalsIgnoreCase("sqlite")) {
-        	sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator+"data");
+        	sqlite = new SQLite(this.getLogger(), "[KillCount]", "users", getDataFolder()+File.separator);
         	sqlite.open();
         	if (sqlite.checkConnection()) {
         		if (!sqlite.checkTable("killcount")) {
