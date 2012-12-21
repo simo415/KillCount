@@ -1,5 +1,6 @@
 package com.unlucky4ever.killcount.commands;
 
+import java.sql.ResultSet;
 import java.util.HashMap;
 
 import org.bukkit.ChatColor;
@@ -92,6 +93,29 @@ public class KillCountAdminCommand extends BaseCommand {
 							sender.sendMessage(ChatColor.RED + "Successfully reset the user + " + parameters.get(1));
 						} else {
 							sender.sendMessage(ChatColor.RED + "User is not in the file!");
+						}
+					}
+					if (plugin.config.getString("storage-type").equalsIgnoreCase("mysql")) {
+						plugin.mysql = new MySQL(plugin.getLogger(), "[KillCount]", plugin.mysql_host, plugin.mysql_port, plugin.mysql_db, plugin.mysql_user, plugin.mysql_password);
+						plugin.mysql.open();
+						if (plugin.mysql.checkConnection()) {
+							try {
+								ResultSet result = plugin.mysql.query("SELECT COUNT(*) FROM killcount WHERE username='" + parameters.get(1) + "'");
+								result.first();
+								int count = result.getInt(1);
+								result.close();
+								if (count == 0) {
+									player.sendMessage(ChatColor.RED + parameters.get(1) + " isn't in the database!");
+								} else {
+									plugin.mysql.query("UPDATE killcount SET kills='0', deaths='0' WHERE username='" + parameters.get(1) + "'");
+									player.sendMessage(ChatColor.RED + parameters.get(1) + " has been reset!");
+								}
+							} catch (Exception e) {
+								if (plugin.config.getBoolean("debug")) {
+									e.printStackTrace();
+								}
+							}
+							plugin.mysql.close();
 						}
 					}
 				}
