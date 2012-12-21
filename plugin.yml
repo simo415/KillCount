@@ -1,5 +1,5 @@
 name: KillCount
-version: 1.3
+version: 1.4
 main: com.unlucky4ever.killcount.KillCount
 
 commands:
