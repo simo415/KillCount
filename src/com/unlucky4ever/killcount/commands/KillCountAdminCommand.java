@@ -80,6 +80,24 @@ public class KillCountAdminCommand extends BaseCommand {
 					}
 				}
 			}
+		} else if (parameters.size() == 2) {
+			if (parameters.get(0).equalsIgnoreCase("reset")) {
+				if (sender.hasPermission("killcount.admin.reset")) {
+					if (plugin.config.getString("storage-type").equalsIgnoreCase("file")) {
+						users = plugin.getCustomConfig();
+						if (users.isInt(parameters.get(1).toLowerCase() + ".kills")) {
+							users.set(parameters.get(1).toLowerCase() + ".kills", 0);
+							users.set(parameters.get(1).toLowerCase() + ".deaths", 0);
+							plugin.saveCustomConfig();
+							sender.sendMessage(ChatColor.RED + "Successfully reset the user + " + parameters.get(1));
+						} else {
+							sender.sendMessage(ChatColor.RED + "User is not in the file!");
+						}
+					}
+				}
+			}
+		} else {
+			sender.sendMessage("You put to many arguments!");
 		}
 	}
 }
